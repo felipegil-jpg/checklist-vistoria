@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist de Vistoria — Veículo</title>
+<style>
+  :root{
+    --bg:#14181c; --panel:#1c2228; --panel-soft:#232a31; --line:#313942;
+    --text:#eef1f3; --muted:#8b96a1; --accent:#ffb24a; --accent-soft:#3a2c14;
+    --ok:#5fd0a0; --bad:#ef6a6a; --warn:#f2c14e; --radius:10px;
+    --serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+    --mono:"JetBrains Mono","SF Mono",Menlo,monospace;
+    --sans:"Inter",-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:720px;margin:0 auto;padding:24px 18px 80px;}
+
+  /* ===== HEADER ===== */
+  header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:22px;gap:12px;flex-wrap:wrap;}
+  .title-block h1{font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:.2px;}
+  .title-block .sub{color:var(--muted);font-size:13px;margin-top:4px;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .odometer{font-family:var(--mono);font-size:12px;color:var(--accent);background:var(--accent-soft);border:1px solid #4a3b22;padding:6px 10px;border-radius:6px;white-space:nowrap;}
+  .admin-btn{font-size:11px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--sans);}
+  .admin-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ===== FORMS ===== */
+  .meta-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:18px;}
+  .meta-card h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
+  input[type=text],input[type=date],input[type=time],input[type=email],textarea,select{
+    width:100%;background:var(--panel-soft);border:1px solid var(--line);color:var(--text);
+    border-radius:6px;padding:9px 10px;font-size:14px;font-family:inherit;
+  }
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);}
+  .field{margin-bottom:10px;}
+
+  /* ===== SECTIONS ===== */
+  .section{margin-bottom:18px;}
+  .section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;font-family:var(--serif);}
+  .section-num{font-family:var(--mono);font-size:13px;color:var(--accent);min-width:22px;}
+  .section-head h2{font-size:18px;font-weight:600;}
+
+  .item{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;}
+  .item-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .item-name{font-size:14.5px;}
+  .status-group{display:flex;gap:6px;flex-shrink:0;}
+  .status-btn{border:1px solid var(--line);background:var(--panel-soft);color:var(--muted);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;font-family:var(--sans);transition:.12s;}
+  .status-btn.ok.active{background:rgba(95,208,160,.15);border-color:var(--ok);color:var(--ok);}
+  .status-btn.bad.active{background:rgba(239,106,106,.15);border-color:var(--bad);color:var(--bad);}
+  .status-btn.na.active{background:rgba(255,255,255,.08);border-color:var(--muted);color:var(--text);}
+  .item-note{margin-top:8px;width:100%;background:var(--panel-soft);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:13px;color:var(--text);display:none;}
+  .item.flagged .item-note{display:block;}
+  .item.flagged{border-color:var(--bad);}
+
+  /* ===== MEDIA ===== */
+  .media-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+  .media-btn{border:1px dashed var(--line);background:transparent;color:var(--muted);font-size:12px;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:6px;}
+  .media-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .thumbs{display:flex;gap:6px;flex-wrap:wrap;}
+  .thumb{position:relative;width:54px;height:54px;border-radius:6px;overflow:hidden;border:1px solid var(--line);}
+  .thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb .rm{position:absolute;top:0;right:0;background:rgba(0,0,0,.6);color:#fff;width:18px;height:18px;font-size:11px;border:none;cursor:pointer;line-height:18px;}
+
+  /* ===== SIGNATURE ===== */
+  .signature-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;}
+  .signature-card h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600;}
+  canvas{width:100%;height:140px;background:var(--panel-soft);border:1px solid var(--line);border-radius:6px;touch-action:none;}
+  .sig-actions{display:flex;gap:8px;margin-top:8px;}
+  .small-btn{border:1px solid var(--line);background:var(--panel-soft);color:var(--muted);font-size:12px;padding:7px 12px;border-radius:6px;cursor:pointer;font-family:var(--sans);}
+
+  /* ===== SUBMIT BAR ===== */
+  .submit-bar{position:sticky;bottom:0;background:linear-gradient(to top,var(--bg) 70%,transparent);padding:18px 0 6px;margin-top:8px;}
+  .submit-btn{width:100%;background:var(--accent);color:#241a06;border:none;font-weight:700;font-size:15px;padding:14px;border-radius:8px;cursor:pointer;font-family:var(--sans);letter-spacing:.3px;}
+  .submit-btn:disabled{opacity:.5;cursor:default;}
+  .status-line{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;}
+
+  /* ===== SUMMARY PILLS ===== */
+  .summary-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;background:var(--panel-soft);border:1px solid var(--line);padding:4px 10px;border-radius:20px;color:var(--muted);}
+  .summary-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.ok{background:var(--ok);}.dot.bad{background:var(--bad);}.dot.pending{background:var(--warn);}
+
+  /* ===== DONE SCREEN ===== */
+  .done-screen{text-align:center;padding:60px 20px;}
+  .done-screen .check{width:64px;height:64px;border-radius:50%;background:rgba(95,208,160,.15);border:1px solid var(--ok);color:var(--ok);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30px;}
+  .done-screen h1{font-family:var(--serif);font-size:24px;margin-bottom:8px;}
+  .done-screen p{color:var(--muted);font-size:14px;}
+  .pdf-btn{width:100%;background:var(--panel-soft);color:var(--text);border:1px solid var(--accent);font-weight:600;font-size:14px;padding:12px;border-radius:8px;cursor:pointer;font-family:var(--sans);margin-top:10px;}
+  .pdf-btn:disabled{opacity:.5;cursor:default;}
+
+  /* ===== ADMIN PANEL ===== */
+  #admin-screen{display:none;}
+  .admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .admin-header h1{font-family:var(--serif);font-size:22px;}
+  .admin-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .danger-btn{background:rgba(239,106,106,.15);border:1px solid var(--bad);color:var(--bad);font-size:12px;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--sans);}
+  .danger-btn:hover{background:rgba(239,106,106,.25);}
+  .back-btn{background:var(--panel-soft);border:1px solid var(--line);color:var(--muted);font-size:12px;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--sans);}
+
+  .report-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .report-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .report-title{font-size:15px;font-weight:600;}
+  .report-meta{font-size:12px;color:var(--muted);margin-top:4px;}
+  .report-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .badge{font-size:11px;padding:3px 9px;border-radius:20px;font-family:var(--mono);}
+  .badge.ok{background:rgba(95,208,160,.15);color:var(--ok);border:1px solid var(--ok);}
+  .badge.bad{background:rgba(239,106,106,.15);color:var(--bad);border:1px solid var(--bad);}
+  .badge.pending{background:rgba(242,193,78,.15);color:var(--warn);border:1px solid var(--warn);}
+  .report-card-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .view-btn{background:var(--panel-soft);border:1px solid var(--accent);color:var(--accent);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:var(--sans);}
+  .del-btn{background:transparent;border:1px solid var(--line);color:var(--muted);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:var(--sans);}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+  .empty-state .icon{font-size:40px;margin-bottom:12px;}
+
+  /* ===== MODAL ===== */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+  .modal-overlay.hidden{display:none;}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);width:100%;max-width:680px;padding:20px;margin:auto;}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .modal-head h2{font-family:var(--serif);font-size:20px;}
+  .close-btn{background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;}
+  .modal-section{margin-bottom:14px;}
+  .modal-section h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+  .modal-item{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;gap:10px;}
+  .modal-item:last-child{border-bottom:none;}
+  .modal-item .name{flex:1;}
+  .modal-item .status-ok{color:var(--ok);}
+  .modal-item .status-bad{color:var(--bad);}
+  .modal-item .status-na{color:var(--muted);}
+  .modal-item .status-pending{color:var(--warn);}
+  .modal-note{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  /* ===== CONFIG SCREEN ===== */
+  #config-screen{display:none;}
+  .config-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .config-card h2{font-size:14px;font-weight:600;margin-bottom:14px;}
+  .config-note{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  .primary-btn{background:var(--accent);color:#241a06;border:none;font-weight:700;font-size:14px;padding:12px 20px;border-radius:8px;cursor:pointer;font-family:var(--sans);}
+  .primary-btn:hover{opacity:.9;}
+  .step-badge{display:inline-block;background:var(--accent-soft);color:var(--accent);border:1px solid #4a3b22;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:4px;margin-bottom:8px;}
+
+  @media(max-width:480px){
+    .grid2{grid-template-columns:1fr;}
+    .title-block h1{font-size:22px;}
+  }
+
+  /* ===== PIN MODAL ===== */
+  .pin-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .pin-modal.hidden{display:none;}
+  .pin-box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:28px;width:100%;max-width:340px;text-align:center;}
+  .pin-box h2{font-family:var(--serif);font-size:20px;margin-bottom:6px;}
+  .pin-box p{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .pin-input{text-align:center;font-size:22px;font-family:var(--mono);letter-spacing:6px;background:var(--panel-soft);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:12px;width:100%;margin-bottom:12px;}
+  .pin-error{color:var(--bad);font-size:12px;margin-bottom:10px;min-height:18px;}
+
+  .emailjs-banner{background:var(--accent-soft);border:1px solid #4a3b22;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--accent);line-height:1.5;}
+  .emailjs-banner a{color:var(--accent);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+
+  <!-- ===== PIN MODAL ===== -->
+  <div class="pin-modal hidden" id="pinModal">
+    <div class="pin-box">
+      <h2>🔐 Área restrita</h2>
+      <p>Digite o PIN de administrador para acessar o painel de relatórios.</p>
+      <input class="pin-input" type="password" id="pinInput" maxlength="6" placeholder="••••" inputmode="numeric">
+      <div class="pin-error" id="pinError"></div>
+      <button class="primary-btn" style="width:100%" onclick="checkPin()">Entrar</button>
+      <button class="back-btn" style="margin-top:10px;width:100%" onclick="closePinModal()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- ===== DETAIL MODAL ===== -->
+  <div class="modal-overlay hidden" id="detailModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="modalTitle">Detalhes da Vistoria</h2>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- ===== FORM SCREEN ===== -->
+  <div id="form-screen">
+    <header>
+      <div class="title-block">
+        <h1>Vistoria de Veículo</h1>
+        <div class="sub">Checklist de retirada / devolução — registre o estado real do carro</div>
+      </div>
+      <div class="header-right">
+        <div class="odometer" id="clock"></div>
+        <button class="admin-btn" onclick="openAdmin()">⚙️ Painel admin</button>
+      </div>
+    </header>
+
+    <div class="meta-card">
+      <h2>Dados do checklist</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>Tipo de vistoria</label>
+          <select id="tipo">
+            <option value="Retirada">Retirada (saída)</option>
+            <option value="Devolução">Devolução (entrega)</option>
+            <option value="Periódica">Vistoria periódica</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Placa do veículo</label>
+          <input type="text" id="placa" placeholder="ABC1D23">
+        </div>
+        <div class="field">
+          <label>Modelo / cor</label>
+          <input type="text" id="modelo" placeholder="Ex: HB20 Branco">
+        </div>
+        <div class="field">
+          <label>Quilometragem</label>
+          <input type="text" id="km" placeholder="Ex: 42.318 km">
+        </div>
+        <div class="field">
+          <label>Nome de quem está vistoriando</label>
+          <input type="text" id="nome" placeholder="Seu nome">
+        </div>
+        <div class="field">
+          <label>Nível de combustível</label>
+          <select id="combustivel">
+            <option>Reserva</option>
+            <option>1/4</option>
+            <option selected>1/2</option>
+            <option>3/4</option>
+            <option>Cheio</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Self do responsável -->
+      <div class="field" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px;">
+        <label>📸 Selfie do responsável pelo preenchimento</label>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;">
+          <button class="media-btn" id="selfieBtn" style="border-color:var(--accent);color:var(--accent);">
+            📸 Tirar selfie / enviar foto
+          </button>
+          <div id="selfie-preview" style="display:none;position:relative;width:72px;height:72px;border-radius:50%;overflow:hidden;border:2px solid var(--accent);flex-shrink:0;">
+            <img id="selfie-img" style="width:100%;height:100%;object-fit:cover;">
+            <button onclick="clearSelfie()" style="position:absolute;top:0;right:0;background:rgba(0,0,0,.6);color:#fff;border:none;width:20px;height:20px;font-size:11px;cursor:pointer;border-radius:0 0 0 6px;">✕</button>
+          </div>
+          <span id="selfie-hint" style="font-size:12px;color:var(--muted);">Foto do rosto para identificação</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-row" id="summary"></div>
+    <div id="sections"></div>
+
+    <div class="section">
+      <div class="section-head">
+        <span class="section-num">⁘</span>
+        <h2>Vídeo geral do veículo</h2>
+      </div>
+      <div class="item">
+        <div class="item-name" style="margin-bottom:8px;">Grave um vídeo curto (360°) mostrando lataria, rodas, painel e interior</div>
+        <div class="media-row">
+          <button class="media-btn" data-target="video-geral" data-accept="video/*" data-capture="environment">🎥 Gravar / enviar vídeo</button>
+        </div>
+        <div class="thumbs" id="thumbs-video-geral"></div>
+      </div>
+    </div>
+
+    <div class="signature-card section">
+      <h2>Assinatura</h2>
+      <canvas id="sigpad"></canvas>
+      <div class="sig-actions">
+        <button class="small-btn" id="clear-sig">Limpar assinatura</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="meta-card">
+        <h2>Observações gerais</h2>
+        <textarea id="obsGeral" rows="3" placeholder="Algo a destacar que não se encaixa nos itens acima?"></textarea>
+      </div>
+    </div>
+
+    <div class="submit-bar">
+      <button class="submit-btn" id="submitBtn">Enviar checklist</button>
+      <button class="pdf-btn" id="pdfBtnForm" style="margin-top:8px;font-size:13px;padding:10px;">📄 Gerar PDF (sem enviar)</button>
+      <div class="status-line" id="statusLine">Os dados ficam salvos automaticamente enquanto você preenche.</div>
+    </div>
+  </div>
+
+  <!-- ===== DONE SCREEN ===== -->
+  <div id="done-screen" style="display:none;" class="done-screen">
+    <div class="check">✓</div>
+    <h1>Checklist enviado!</h1>
+    <p>Recebemos a vistoria do veículo <strong id="done-placa"></strong>.<br>Obrigado por preencher com atenção.</p>
+    <p style="margin-top:18px;">
+      <button class="small-btn" id="newOne">🔄 Novo checklist</button>
+    </p>
+    <p style="margin-top:10px;">
+      <button class="pdf-btn" id="pdfBtn">📄 Gerar PDF do checklist</button>
+    </p>
+    <p class="status-line" id="pdfStatus" style="margin-top:8px;"></p>
+  </div>
+
+  <!-- ===== ADMIN SCREEN ===== -->
+  <div id="admin-screen">
+    <div class="admin-header">
+      <div>
+        <h1>📋 Painel de Relatórios</h1>
+        <div style="color:var(--muted);font-size:13px;margin-top:4px;" id="reportCount"></div>
+      </div>
+      <div class="admin-actions">
+        <button class="view-btn" onclick="showConfig()">⚙️ Configurar e-mail</button>
+        <button class="danger-btn" onclick="clearAllReports()">🗑️ Limpar todos</button>
+        <button class="back-btn" onclick="backToForm()">← Voltar</button>
+      </div>
+    </div>
+    <div id="reportList"></div>
+  </div>
+
+  <!-- ===== CONFIG SCREEN ===== -->
+  <div id="config-screen">
+    <div class="admin-header">
+      <h1>⚙️ Configurar E-mail</h1>
+      <button class="back-btn" onclick="backToAdmin()">← Voltar</button>
+    </div>
+
+    <div class="emailjs-banner">
+      📧 Este checklist usa o <strong>EmailJS</strong> para enviar e-mails diretamente do navegador, sem servidor. É gratuito para até 200 e-mails/mês.<br>
+      <a href="https://emailjs.com" target="_blank">→ Criar conta gratuita em emailjs.com</a>
+    </div>
+
+    <div class="config-card">
+      <h2>Passo a passo para configurar</h2>
+      <div style="margin-bottom:16px;">
+        <div class="step-badge">PASSO 1</div>
+        <p style="font-size:13px;color:var(--muted);">Acesse <a href="https://emailjs.com" target="_blank" style="color:var(--accent);">emailjs.com</a> → crie conta gratuita → anote seu <strong style="color:var(--text);">Service ID</strong> (em Email Services) e seu <strong style="color:var(--text);">Public Key</strong> (em Account → API Keys).</p>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div class="step-badge">PASSO 2</div>
+        <p style="font-size:13px;color:var(--muted);">Em <strong style="color:var(--text);">Email Templates</strong>, crie um template. No corpo coloque: <code style="background:var(--panel-soft);padding:2px 6px;border-radius:4px;font-size:12px;">{{message}}</code>. Anote o <strong style="color:var(--text);">Template ID</strong>.</p>
+      </div>
+      <div>
+        <div class="step-badge">PASSO 3</div>
+        <p style="font-size:13px;color:var(--muted);">Preencha os campos abaixo e salve.</p>
+      </div>
+    </div>
+
+    <div class="config-card">
+      <h2>Suas credenciais EmailJS</h2>
+      <div class="field">
+        <label>Public Key (API Key)</label>
+        <input type="text" id="cfg-pubkey" placeholder="Ex: xK8aB2cD...">
+      </div>
+      <div class="field">
+        <label>Service ID</label>
+        <input type="text" id="cfg-service" placeholder="Ex: service_abc123">
+      </div>
+      <div class="field">
+        <label>Template ID</label>
+        <input type="text" id="cfg-template" placeholder="Ex: template_xyz789">
+      </div>
+      <div class="field">
+        <label>Seu e-mail (para onde chegar os checklists)</label>
+        <input type="email" id="cfg-email" placeholder="seuemail@gmail.com" value="felipemarcosgil@gmail.com">
+      </div>
+      <div class="field">
+        <label>PIN de administrador (4–6 dígitos)</label>
+        <input type="text" id="cfg-pin" placeholder="Ex: 1234" maxlength="6" inputmode="numeric">
+        <div class="config-note">⚠️ Este PIN protege o acesso ao painel de relatórios. Não esqueça!</div>
+      </div>
+      <button class="primary-btn" style="margin-top:8px;" onclick="saveConfig()">💾 Salvar configuração</button>
+      <div class="status-line" id="cfgStatus" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+</div><!-- end .wrap -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBn63xqyGSCahDnWKbraLvzfFSJZz-B08o",
+  authDomain: "vistoria-veiculo.firebaseapp.com",
+  projectId: "vistoria-veiculo",
+  storageBucket: "vistoria-veiculo.firebasestorage.app",
+  messagingSenderId: "721825339351",
+  appId: "1:721825339351:web:e77dee106fe876c5d09d92"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+// Expõe globalmente para o script clássico usar
+window.FB = { db, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, updateDoc };
+window.FB_READY = true;
+window.dispatchEvent(new Event('fb-ready'));
+</script>
+
+<script>
+// =====================================================================
+// STORAGE — usa localStorage
+// =====================================================================
+const LS = {
+  set(k,v){ try{localStorage.setItem(k,v);return true;}catch(e){return false;} },
+  get(k){ try{return localStorage.getItem(k);}catch(e){return null;} },
+  del(k){ try{localStorage.removeItem(k);}catch(e){} },
+  keys(prefix){ try{return Object.keys(localStorage).filter(k=>!prefix||k.startsWith(prefix));}catch(e){return[];} }
+};
+
+// =====================================================================
+// CHECKLIST ITEMS
+// =====================================================================
+const CHECKLIST = [
+  { title:"Exterior", items:[
+    "Lataria — riscos, amassados ou ferrugem",
+    "Para-choque dianteiro e traseiro",
+    "Faróis, lanternas e setas (funcionando e sem trincas)",
+    "Rodas, calotas e pneus (estado e calibragem visual)",
+    "Estepe, macaco e chave de roda no porta-malas",
+    "Vidros e retrovisores (sem trincas)",
+    "Limpadores de para-brisa"
+  ]},
+  { title:"Interior", items:[
+    "Bancos (limpeza, manchas, rasgos)",
+    "Tapetes e carpete",
+    "Painel, console e botões funcionando",
+    "Ar-condicionado / ventilação",
+    "Cintos de segurança",
+    "Cheiro do veículo (fumo, mofo, etc.)",
+    "Manual, documento (CRLV) e nota fiscal/contrato no veículo"
+  ]},
+  { title:"Funcionamento", items:[
+    "Partida do motor sem ruídos anormais",
+    "Freios (resposta normal)",
+    "Direção (sem folgas ou ruídos)",
+    "Luzes do painel (sem alertas acesos)",
+    "Buzina",
+    "Vidros elétricos e trava elétrica"
+  ]},
+  { title:"Itens de bordo", items:[
+    "Triângulo de sinalização",
+    "Macaco e chave de roda",
+    "Extintor (se aplicável)",
+    "Carregador/cabo (se fornecido pela locadora)"
+  ]}
+];
+
+// =====================================================================
+// STATE
+// =====================================================================
+const DRAFT_KEY = 'vistoria:draft';
+const REPORTS_PREFIX = 'vistoria:report:';
+const CONFIG_KEY = 'vistoria:config';
+
+let mediaStore = {};
+let stateData = {};
+
+function loadConfig(){
+  try{ return JSON.parse(LS.get(CONFIG_KEY)||'{}'); }catch(e){ return {}; }
+}
+function saveConfigData(cfg){
+  LS.set(CONFIG_KEY, JSON.stringify(cfg));
+}
+
+// =====================================================================
+// CLOCK
+// =====================================================================
+function clockTick(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+}
+clockTick(); setInterval(clockTick,30000);
+
+// =====================================================================
+// BUILD FORM SECTIONS
+// =====================================================================
+const sectionsEl = document.getElementById('sections');
+CHECKLIST.forEach((sec,sIdx)=>{
+  const secEl = document.createElement('div');
+  secEl.className='section';
+  secEl.innerHTML=`<div class="section-head"><span class="section-num">${String(sIdx+1).padStart(2,'0')}</span><h2>${sec.title}</h2></div>`;
+  sec.items.forEach((label,iIdx)=>{
+    const key=`s${sIdx}_i${iIdx}`;
+    const itemEl=document.createElement('div');
+    itemEl.className='item'; itemEl.id=`item-${key}`;
+    itemEl.innerHTML=`
+      <div class="item-top">
+        <div class="item-name">${label}</div>
+        <div class="status-group" data-key="${key}">
+          <button class="status-btn ok" data-status="ok">OK</button>
+          <button class="status-btn bad" data-status="bad">Problema</button>
+          <button class="status-btn na" data-status="na">N/A</button>
+        </div>
+      </div>
+      <textarea class="item-note" data-key="${key}" placeholder="Descreva o problema encontrado..."></textarea>
+      <div class="media-row">
+        <button class="media-btn" data-target="${key}" data-accept="image/*" data-capture="environment">📷 Foto</button>
+        <button class="media-btn" data-target="${key}" data-accept="video/*" data-capture="environment">🎥 Vídeo</button>
+        <div class="thumbs" id="thumbs-${key}"></div>
+      </div>`;
+    secEl.appendChild(itemEl);
+  });
+  sectionsEl.appendChild(secEl);
+});
+
+// =====================================================================
+// STATUS BUTTONS
+// =====================================================================
+document.querySelectorAll('.status-group').forEach(group=>{
+  const key=group.dataset.key;
+  stateData[key]=stateData[key]||{status:null,note:''};
+  group.querySelectorAll('.status-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const status=btn.dataset.status;
+      stateData[key].status=status;
+      group.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const item=document.getElementById(`item-${key}`);
+      if(status==='bad') item.classList.add('flagged');
+      else item.classList.remove('flagged');
+      updateSummary(); persist();
+    });
+  });
+});
+
+document.querySelectorAll('.item-note').forEach(ta=>{
+  ta.addEventListener('input',()=>{ stateData[ta.dataset.key].note=ta.value; persist(); });
+});
+
+function updateSummary(){
+  let ok=0,bad=0,pending=0;
+  Object.values(stateData).forEach(s=>{
+    if(s.status==='ok'||s.status==='na') ok++;
+    else if(s.status==='bad') bad++;
+    else pending++;
+  });
+  document.getElementById('summary').innerHTML=`
+    <span class="summary-pill"><span class="dot ok"></span> ${ok} OK</span>
+    <span class="summary-pill"><span class="dot bad"></span> ${bad} com problema</span>
+    <span class="summary-pill"><span class="dot pending"></span> ${pending} pendente</span>`;
+}
+updateSummary();
+
+// =====================================================================
+// MEDIA
+// =====================================================================
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+}
+// Comprime em cascata até atingir tamanho alvo
+async function compressImage(dataUrl, targetBytes=80000){
+  const steps=[
+    {maxW:1200,q:0.7},{maxW:900,q:0.6},{maxW:700,q:0.5},
+    {maxW:500,q:0.45},{maxW:400,q:0.4},{maxW:300,q:0.35}
+  ];
+  let result=dataUrl;
+  for(const {maxW,q} of steps){
+    result = await _resizeJpeg(dataUrl,maxW,q);
+    if(result.length<=targetBytes) return result;
+  }
+  return result;
+}
+function _resizeJpeg(dataUrl,maxW,quality){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(1,maxW/img.width);
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale);
+      c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      resolve(c.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>resolve(dataUrl);
+    img.src=dataUrl;
+  });
+}
+// Salva fotos comprimidas por chave de item no localStorage
+function saveMediaToLS(){
+  LS.keys('vistoria:media:').forEach(k=>LS.del(k));
+  Object.entries(mediaStore).forEach(([key,items])=>{
+    if(!items||!items.length) return;
+    const imgOnly=items.filter(i=>i.type&&i.type.startsWith('image'));
+    if(!imgOnly.length) return;
+    try{ LS.set('vistoria:media:'+key, JSON.stringify(imgOnly)); }catch(e){}
+  });
+}
+function loadMediaFromLS(){
+  const result={};
+  LS.keys('vistoria:media:').forEach(k=>{
+    const itemKey=k.replace('vistoria:media:','');
+    try{ result[itemKey]=JSON.parse(LS.get(k)||'[]'); }catch(e){}
+  });
+  return result;
+}
+function renderThumb(key,idx,item){
+  const container=document.getElementById(`thumbs-${key}`);
+  const div=document.createElement('div'); div.className='thumb';
+  div.innerHTML=item.type.startsWith('image')?`<img src="${item.dataUrl}">`:`<video src="${item.dataUrl}" muted></video>`;
+  const rm=document.createElement('button'); rm.className='rm'; rm.textContent='✕';
+  rm.addEventListener('click',()=>{ mediaStore[key].splice(idx,1); refreshThumbs(key); persist(); });
+  div.appendChild(rm); container.appendChild(div);
+}
+function refreshThumbs(key){
+  const c=document.getElementById(`thumbs-${key}`); if(!c)return;
+  c.innerHTML=''; (mediaStore[key]||[]).forEach((item,idx)=>renderThumb(key,idx,item));
+}
+document.querySelectorAll('.media-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const input=document.createElement('input'); input.type='file';
+    input.accept=btn.dataset.accept;
+    if(btn.dataset.capture) input.capture=btn.dataset.capture;
+    input.addEventListener('change',async()=>{
+      const file=input.files[0]; if(!file) return;
+      const key=btn.dataset.target;
+      mediaStore[key]=mediaStore[key]||[];
+      btn.textContent='⏳ Processando...'; btn.disabled=true;
+      let dataUrl=await fileToDataUrl(file);
+      if(file.type.startsWith('image')) dataUrl=await compressImage(dataUrl,80000);
+      mediaStore[key].push({type:file.type,dataUrl});
+      refreshThumbs(key);
+      btn.textContent=btn.dataset.accept.startsWith('video')?'🎥 Vídeo':'📷 Foto';
+      btn.disabled=false;
+      persist();
+    });
+    input.click();
+  });
+});
+
+// =====================================================================
+// SELFIE DO RESPONSÁVEL
+// =====================================================================
+const SELFIE_KEY = 'vistoria:selfie';
+let selfieDataUrl = null;
+
+document.getElementById('selfieBtn').addEventListener('click',()=>{
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'user'; // câmera frontal
+  input.addEventListener('change', async()=>{
+    const file = input.files[0]; if(!file) return;
+    const btn = document.getElementById('selfieBtn');
+    btn.textContent = '⏳ Processando...'; btn.disabled = true;
+    let dataUrl = await fileToDataUrl(file);
+    dataUrl = await compressImage(dataUrl, 60000); // selfie comprimida ~60KB
+    selfieDataUrl = dataUrl;
+    saveSelfieToLS();
+    renderSelfiePreview();
+    btn.textContent = '📸 Trocar selfie'; btn.disabled = false;
+    persist();
+  });
+  input.click();
+});
+
+function renderSelfiePreview(){
+  const preview = document.getElementById('selfie-preview');
+  const img = document.getElementById('selfie-img');
+  const hint = document.getElementById('selfie-hint');
+  if(selfieDataUrl){
+    img.src = selfieDataUrl;
+    preview.style.display = 'block';
+    hint.textContent = '✅ Selfie registrada';
+    hint.style.color = 'var(--ok)';
+    document.getElementById('selfieBtn').textContent = '📸 Trocar selfie';
+  } else {
+    preview.style.display = 'none';
+    hint.textContent = 'Foto do rosto para identificação';
+    hint.style.color = 'var(--muted)';
+    document.getElementById('selfieBtn').textContent = '📸 Tirar selfie / enviar foto';
+  }
+}
+function saveSelfieToLS(){
+  if(selfieDataUrl) try{ LS.set(SELFIE_KEY, selfieDataUrl); }catch(e){}
+  else LS.del(SELFIE_KEY);
+}
+function loadSelfieFromLS(){
+  selfieDataUrl = LS.get(SELFIE_KEY) || null;
+  renderSelfiePreview();
+}
+function clearSelfie(){
+  selfieDataUrl = null;
+  saveSelfieToLS();
+  renderSelfiePreview();
+  persist();
+}
+
+// =====================================================================
+// SIGNATURE PAD
+// =====================================================================
+const canvas=document.getElementById('sigpad');
+const ctx=canvas.getContext('2d');
+function resizeCanvas(){
+  const ratio=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*ratio; canvas.height=rect.height*ratio;
+  ctx.scale(ratio,ratio);
+  ctx.strokeStyle='#eef1f3'; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.lineCap='round';
+}
+resizeCanvas();
+let drawing=false;
+function pos(e){ const rect=canvas.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return{x:t.clientX-rect.left,y:t.clientY-rect.top}; }
+function start(e){ drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); }
+function move(e){ if(!drawing)return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); }
+function end(){ drawing=false; persist(); }
+['mousedown','touchstart'].forEach(ev=>canvas.addEventListener(ev,start));
+['mousemove','touchmove'].forEach(ev=>canvas.addEventListener(ev,move));
+['mouseup','mouseleave','touchend'].forEach(ev=>canvas.addEventListener(ev,end));
+document.getElementById('clear-sig').addEventListener('click',()=>{ ctx.clearRect(0,0,canvas.width,canvas.height); persist(); });
+
+// =====================================================================
+// PERSISTENCE (draft)
+// =====================================================================
+let saveTimeout;
+function persist(){
+  clearTimeout(saveTimeout);
+  document.getElementById('statusLine').textContent='Salvando...';
+  saveTimeout=setTimeout(()=>{
+    const payload={
+      meta:{
+        tipo:document.getElementById('tipo').value,
+        placa:document.getElementById('placa').value,
+        modelo:document.getElementById('modelo').value,
+        km:document.getElementById('km').value,
+        nome:document.getElementById('nome').value,
+        combustivel:document.getElementById('combustivel').value,
+        obsGeral:document.getElementById('obsGeral').value,
+      },
+      stateData, mediaStore,
+      selfie: selfieDataUrl,
+      signature:canvas.toDataURL('image/png'),
+      submitted:false,
+      savedAt:new Date().toISOString()
+    };
+    // Salva draft sem fotos (texto é rápido)
+    const lite={...payload, mediaStore:{}};
+    LS.set(DRAFT_KEY, JSON.stringify(lite));
+    // Salva fotos separadamente, comprimidas por item
+    saveMediaToLS();
+    document.getElementById('statusLine').textContent='Salvo automaticamente — '+new Date().toLocaleTimeString('pt-BR');
+  },600);
+}
+['tipo','placa','modelo','km','nome','combustivel','obsGeral'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',persist);
+  document.getElementById(id).addEventListener('change',persist);
+});
+
+// =====================================================================
+// LOAD DRAFT
+// =====================================================================
+async function loadExisting(){
+  try{
+    const raw=LS.get(DRAFT_KEY); if(!raw) return;
+    const data=JSON.parse(raw);
+    if(data.submitted){ showDone(data.meta.placa); return; }
+    const m=data.meta||{};
+    document.getElementById('tipo').value=m.tipo||'Retirada';
+    document.getElementById('placa').value=m.placa||'';
+    document.getElementById('modelo').value=m.modelo||'';
+    document.getElementById('km').value=m.km||'';
+    document.getElementById('nome').value=m.nome||'';
+    document.getElementById('combustivel').value=m.combustivel||'1/2';
+    document.getElementById('obsGeral').value=m.obsGeral||'';
+    stateData=data.stateData||stateData;
+    // Carrega fotos salvas separadamente
+    mediaStore=loadMediaFromLS();
+    Object.entries(stateData).forEach(([key,s])=>{
+      if(!s.status) return;
+      const group=document.querySelector(`.status-group[data-key="${key}"]`); if(!group) return;
+      group.querySelectorAll('.status-btn').forEach(b=>b.classList.toggle('active',b.dataset.status===s.status));
+      if(s.status==='bad') document.getElementById(`item-${key}`).classList.add('flagged');
+      const ta=document.querySelector(`.item-note[data-key="${key}"]`);
+      if(ta) ta.value=s.note||'';
+    });
+    Object.keys(mediaStore).forEach(key=>refreshThumbs(key));
+    loadSelfieFromLS();
+    if(data.signature){
+      const img=new Image();
+      img.onload=()=>ctx.drawImage(img,0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1));
+      img.src=data.signature;
+    }
+    updateSummary();
+    document.getElementById('statusLine').textContent='Rascunho carregado — '+new Date(data.savedAt).toLocaleString('pt-BR');
+  }catch(e){}
+}
+loadExisting();
+
+// =====================================================================
+// SUBMIT
+// =====================================================================
+function showDone(placa){
+  document.getElementById('form-screen').style.display='none';
+  document.getElementById('done-screen').style.display='block';
+  document.getElementById('done-placa').textContent=placa||'';
+}
+
+document.getElementById('submitBtn').addEventListener('click', async()=>{
+  const btn=document.getElementById('submitBtn');
+  const statusLine=document.getElementById('statusLine');
+  btn.disabled=true; btn.textContent='Enviando...';
+  statusLine.textContent='Salvando dados...';
+
+  if(!window.FB_READY){
+    statusLine.textContent='Conectando ao servidor...';
+    await new Promise(r=>window.addEventListener('fb-ready',r,{once:true}));
+  }
+
+  // Coleta fotos em base64 (apenas imagens; vídeos são muito pesados para Firestore)
+  statusLine.textContent='Preparando fotos...';
+  const allMedia = loadMediaFromLS();
+  if(!Object.keys(allMedia).length) Object.assign(allMedia, mediaStore);
+  const mediaBase64 = {};
+  for(const [key, items] of Object.entries(allMedia)){
+    const imgs = (items||[]).filter(i=>i.type&&i.type.startsWith('image'));
+    if(imgs.length) mediaBase64[key] = imgs.map(i=>i.dataUrl);
+  }
+
+  const payload={
+    meta:{
+      tipo:document.getElementById('tipo').value,
+      placa:document.getElementById('placa').value,
+      modelo:document.getElementById('modelo').value,
+      km:document.getElementById('km').value,
+      nome:document.getElementById('nome').value,
+      combustivel:document.getElementById('combustivel').value,
+      obsGeral:document.getElementById('obsGeral').value,
+    },
+    stateData,
+    mediaBase64,
+    selfie: selfieDataUrl || null,
+    signature: canvas.toDataURL('image/png'),
+    submitted: true,
+    submittedAt: new Date().toISOString(),
+    savedAt: new Date().toISOString()
+  };
+
+  try{
+    const {db, collection, addDoc} = window.FB;
+
+    statusLine.textContent='Enviando para o servidor...';
+    await addDoc(collection(db,'vistorias'), payload);
+
+    // Marca draft como enviado localmente
+    window._lastSubmittedData = payload;
+    try{ LS.set(DRAFT_KEY, JSON.stringify({...payload, mediaBase64:{}, submitted:true})); }catch(e){}
+
+    // Envia e-mail via EmailJS se configurado
+    const cfg = loadConfig();
+    if(cfg.pubkey && cfg.service && cfg.template && cfg.email){
+      try{
+        emailjs.init(cfg.pubkey);
+        const m = payload.meta;
+        let problemasLines = '';
+        Object.entries(payload.stateData).forEach(([key,s])=>{
+          if(s.status==='bad'){
+            const match=key.match(/^s(\d+)_i(\d+)$/);
+            if(match) problemasLines += `• [PROBLEMA] ${CHECKLIST[+match[1]].items[+match[2]]}${s.note?' — '+s.note:''}\n`;
+          }
+        });
+        const msgBody = `CHECKLIST DE VISTORIA RECEBIDO\n================================\nData/hora: ${new Date(payload.submittedAt).toLocaleString('pt-BR')}\nTipo: ${m.tipo}\nPlaca: ${m.placa}\nModelo/cor: ${m.modelo}\nKM: ${m.km}\nResponsável: ${m.nome}\nCombustível: ${m.combustivel}\n\n${problemasLines?'ITENS COM PROBLEMA:\n'+problemasLines:'Nenhum problema registrado.'}\n\n${m.obsGeral?'Observações gerais: '+m.obsGeral:''}\n================================\nAcesse o painel admin para ver o relatório completo.`.trim();
+        await emailjs.send(cfg.service, cfg.template, {
+          to_email: cfg.email,
+          subject: `Vistoria ${m.tipo} — ${m.placa} — ${m.modelo}`,
+          message: msgBody
+        });
+      }catch(err){ console.warn('EmailJS falhou:', err); }
+    }
+
+    showDone(payload.meta.placa);
+  }catch(e){
+    statusLine.textContent='❌ Erro ao enviar: '+e.message;
+    btn.disabled=false; btn.textContent='Tentar novamente';
+    return;
+  }
+
+  btn.disabled=false;
+  btn.textContent='Enviar checklist';
+});
+
+// ===== Novo checklist =====
+document.getElementById('newOne').addEventListener('click',()=>{
+  if(!confirm('Isso vai limpar o formulário para um novo preenchimento. Continuar?')) return;
+  LS.del(DRAFT_KEY);
+  LS.keys('vistoria:media:').forEach(k=>LS.del(k));
+  LS.del(SELFIE_KEY);
+  location.reload();
+});
+
+// =====================================================================
+// ADMIN — PIN
+// =====================================================================
+function openAdmin(){
+  const cfg=loadConfig();
+  if(!cfg.pin){
+    // Sem PIN configurado: vai direto para config
+    showScreen('config-screen');
+    loadConfigForm();
+    return;
+  }
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinError').textContent='';
+  document.getElementById('pinModal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('pinInput').focus(),100);
+}
+function closePinModal(){
+  document.getElementById('pinModal').classList.add('hidden');
+}
+document.getElementById('pinInput').addEventListener('keydown',e=>{ if(e.key==='Enter') checkPin(); });
+function checkPin(){
+  const cfg=loadConfig();
+  const entered=document.getElementById('pinInput').value.trim();
+  if(entered===String(cfg.pin)){
+    closePinModal();
+    showScreen('admin-screen');
+    renderReports();
+  }else{
+    document.getElementById('pinError').textContent='PIN incorreto. Tente novamente.';
+    document.getElementById('pinInput').value='';
+    document.getElementById('pinInput').focus();
+  }
+}
+
+// =====================================================================
+// ADMIN — REPORTS
+// =====================================================================
+function showScreen(id){
+  ['form-screen','done-screen','admin-screen','config-screen'].forEach(s=>{
+    document.getElementById(s).style.display='none';
+  });
+  document.getElementById(id).style.display='block';
+}
+function backToForm(){
+  showScreen('form-screen');
+  // re-check if done
+  const raw=LS.get(DRAFT_KEY);
+  if(raw){ try{ const d=JSON.parse(raw); if(d.submitted){ showDone(d.meta.placa); return; } }catch(e){} }
+}
+function backToAdmin(){ showScreen('admin-screen'); renderReports(); }
+function showConfig(){ showScreen('config-screen'); loadConfigForm(); }
+
+function statusLabel(s){
+  if(s==='ok') return 'OK';
+  if(s==='bad') return '⚠️ PROBLEMA';
+  if(s==='na') return 'N/A';
+  return '—';
+}
+
+// Cache local dos relatórios vindos do Firestore
+let _reportsCache = [];
+
+async function renderReports(){
+  const list=document.getElementById('reportList');
+  list.innerHTML=`<div class="empty-state"><div class="icon">⏳</div><p>Carregando vistorias...</p></div>`;
+
+  if(!window.FB_READY){
+    await new Promise(r=>window.addEventListener('fb-ready',r,{once:true}));
+  }
+
+  try{
+    const {db, collection, getDocs, query, orderBy} = window.FB;
+    const q = query(collection(db,'vistorias'), orderBy('submittedAt','desc'));
+    const snap = await getDocs(q);
+    _reportsCache = [];
+    snap.forEach(d=>_reportsCache.push({id:d.id, ...d.data()}));
+  }catch(e){
+    list.innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><p>Erro ao carregar: ${e.message}</p></div>`;
+    return;
+  }
+
+  document.getElementById('reportCount').textContent=`${_reportsCache.length} vistoria(s) registrada(s)`;
+  if(!_reportsCache.length){
+    list.innerHTML=`<div class="empty-state"><div class="icon">📭</div><p>Nenhuma vistoria recebida ainda.</p></div>`;
+    return;
+  }
+  list.innerHTML='';
+  _reportsCache.forEach(data=>{
+    const m=data.meta||{};
+    let ok=0,bad=0,pending=0;
+    Object.values(data.stateData||{}).forEach(s=>{
+      if(s.status==='ok'||s.status==='na') ok++;
+      else if(s.status==='bad') bad++;
+      else pending++;
+    });
+    const date=new Date(data.submittedAt||data.savedAt).toLocaleString('pt-BR');
+    const card=document.createElement('div'); card.className='report-card';
+    card.innerHTML=`
+      <div class="report-card-head">
+        <div>
+          <div class="report-title">🚗 ${m.placa||'Sem placa'} — ${m.modelo||'Sem modelo'}</div>
+          <div class="report-meta">${m.tipo||''} · ${m.nome||''} · ${date} · Combustível: ${m.combustivel||'-'}</div>
+        </div>
+      </div>
+      <div class="report-badges">
+        <span class="badge ok">✓ ${ok} OK</span>
+        ${bad?`<span class="badge bad">⚠ ${bad} problema(s)</span>`:''}
+        ${pending?`<span class="badge pending">? ${pending} pendente(s)</span>`:''}
+      </div>
+      ${m.obsGeral?`<div style="font-size:12px;color:var(--muted);margin-top:8px;">Obs: ${m.obsGeral}</div>`:''}
+      <div class="report-card-actions">
+        <button class="view-btn" onclick="openDetail('${data.id}')">🔍 Ver detalhes</button>
+        <button class="view-btn" id="pdf-btn-${data.id}" onclick="generateReportPDF('${data.id}')">📄 Gerar PDF</button>
+        <button class="del-btn" onclick="deleteReport('${data.id}')">🗑 Excluir</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+async function deleteReport(id){
+  if(!confirm('Excluir esta vistoria?')) return;
+  if(!window.FB_READY) await new Promise(r=>window.addEventListener('fb-ready',r,{once:true}));
+  try{
+    const {db, doc, deleteDoc} = window.FB;
+    await deleteDoc(doc(db,'vistorias',id));
+    _reportsCache = _reportsCache.filter(r=>r.id!==id);
+    renderReports();
+  }catch(e){ alert('Erro ao excluir: '+e.message); }
+}
+
+async function clearAllReports(){
+  if(!confirm('Apagar TODAS as vistorias do painel? Esta ação não pode ser desfeita.')) return;
+  if(!window.FB_READY) await new Promise(r=>window.addEventListener('fb-ready',r,{once:true}));
+  try{
+    const {db, collection, getDocs, deleteDoc, doc} = window.FB;
+    const snap = await getDocs(collection(db,'vistorias'));
+    await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'vistorias',d.id))));
+    renderReports();
+  }catch(e){ alert('Erro: '+e.message); }
+}
+
+function openDetail(id){
+  try{
+    const data = _reportsCache.find(r=>r.id===id);
+    if(!data){ alert('Vistoria não encontrada.'); return; }
+    const m=data.meta||{};
+    document.getElementById('modalTitle').textContent=`${m.placa||''} — ${m.tipo||''}`;
+    let html=`
+      <div class="modal-section">
+        <h3>Dados gerais</h3>
+        <div class="modal-item"><span class="name">Placa</span><span>${m.placa||'-'}</span></div>
+        <div class="modal-item"><span class="name">Modelo / cor</span><span>${m.modelo||'-'}</span></div>
+        <div class="modal-item"><span class="name">Quilometragem</span><span>${m.km||'-'}</span></div>
+        <div class="modal-item"><span class="name">Responsável</span><span>${m.nome||'-'}</span></div>
+        <div class="modal-item"><span class="name">Combustível</span><span>${m.combustivel||'-'}</span></div>
+        <div class="modal-item"><span class="name">Data/hora</span><span>${new Date(data.submittedAt||data.savedAt).toLocaleString('pt-BR')}</span></div>
+      </div>`;
+    CHECKLIST.forEach((sec,sIdx)=>{
+      html+=`<div class="modal-section"><h3>${sec.title}</h3>`;
+      sec.items.forEach((label,iIdx)=>{
+        const k=`s${sIdx}_i${iIdx}`;
+        const s=(data.stateData||{})[k]||{};
+        const cls=s.status==='ok'?'status-ok':s.status==='bad'?'status-bad':s.status==='na'?'status-na':'status-pending';
+        html+=`<div class="modal-item">
+          <div class="name">${label}${s.note?`<div class="modal-note">📝 ${s.note}</div>`:''}</div>
+          <span class="${cls}">${statusLabel(s.status)}</span>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    if(m.obsGeral) html+=`<div class="modal-section"><h3>Observações gerais</h3><p style="font-size:13px;color:var(--muted);">${m.obsGeral}</p></div>`;
+    if(data.selfie) html+=`<div class="modal-section"><h3>Selfie do responsável</h3><img src="${data.selfie}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);"></div>`;
+    if(data.signature) html+=`<div class="modal-section"><h3>Assinatura</h3><img src="${data.signature}" style="max-width:200px;border-radius:6px;border:1px solid var(--line);background:var(--panel-soft);"></div>`;
+
+    // Fotos em base64
+    const allPhotos = [];
+    if(data.mediaBase64) Object.values(data.mediaBase64).forEach(arr=>(arr||[]).forEach(d=>allPhotos.push(d)));
+    if(allPhotos.length){
+      html+=`<div class="modal-section"><h3>Fotos anexadas</h3><div style="display:flex;flex-wrap:wrap;gap:8px;">`;
+      allPhotos.forEach(dataUrl=>{
+        html+=`<a href="${dataUrl}" target="_blank"><img src="${dataUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--line);"></a>`;
+      });
+      html+=`</div></div>`;
+    }
+
+    document.getElementById('modalBody').innerHTML=html;
+    document.getElementById('detailModal').classList.remove('hidden');
+  }catch(e){ alert('Erro ao abrir detalhes: '+e.message); }
+}
+function closeModal(){ document.getElementById('detailModal').classList.add('hidden'); }
+document.getElementById('detailModal').addEventListener('click',e=>{ if(e.target===document.getElementById('detailModal')) closeModal(); });
+
+// =====================================================================
+// CONFIG
+// =====================================================================
+function loadConfigForm(){
+  const cfg=loadConfig();
+  document.getElementById('cfg-pubkey').value=cfg.pubkey||'';
+  document.getElementById('cfg-service').value=cfg.service||'';
+  document.getElementById('cfg-template').value=cfg.template||'';
+  document.getElementById('cfg-email').value=cfg.email||'';
+  document.getElementById('cfg-pin').value=cfg.pin||'';
+}
+function saveConfig(){
+  const cfg={
+    pubkey:document.getElementById('cfg-pubkey').value.trim(),
+    service:document.getElementById('cfg-service').value.trim(),
+    template:document.getElementById('cfg-template').value.trim(),
+    email:document.getElementById('cfg-email').value.trim(),
+    pin:document.getElementById('cfg-pin').value.trim(),
+  };
+  if(!cfg.pin||cfg.pin.length<4){ document.getElementById('cfgStatus').textContent='⚠️ PIN deve ter pelo menos 4 dígitos.'; return; }
+  saveConfigData(cfg);
+  document.getElementById('cfgStatus').textContent='✅ Configuração salva com sucesso!';
+  setTimeout(()=>{ showScreen('admin-screen'); renderReports(); },1200);
+}
+
+// =====================================================================
+// PDF
+// =====================================================================
+function statusLabelPDF(s){
+  if(s==='ok') return 'OK';
+  if(s==='bad') return 'PROBLEMA';
+  if(s==='na') return 'N/A';
+  return 'PENDENTE';
+}
+function statusColorPDF(s){
+  if(s==='bad') return [200,60,60];
+  if(s==='ok'||s==='na') return [40,140,90];
+  return [160,130,30];
+}
+
+function waitImgLoad(src){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>resolve(null);
+    img.src=src;
+  });
+}
+
+// -----------------------------------------------------------------------
+// buildPDF: função central que monta o PDF a partir de dados já resolvidos.
+// data = { meta, sData, mStore, selfieForPdf, sig, submittedAt }
+// -----------------------------------------------------------------------
+async function buildPDF(data){
+  const {meta, sData, mStore, selfieForPdf, sig, submittedAt} = data;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const pageW=210, pageH=297, margin=15, contentW=pageW-margin*2;
+  let y=margin;
+
+  function newPage(){ doc.addPage(); y=margin; }
+  function ensureSpace(h){ if(y+h>pageH-margin) newPage(); }
+  function hr(color=[220,220,220]){
+    doc.setDrawColor(...color);
+    doc.setLineWidth(0.3);
+    doc.line(margin,y,pageW-margin,y);
+    y+=5;
+  }
+  function resetText(){ doc.setTextColor(0); doc.setFont('helvetica','normal'); doc.setFontSize(10.5); }
+
+  // ── Cabeçalho ──
+  doc.setFillColor(20,24,28);
+  doc.rect(0,0,pageW,22,'F');
+  doc.setTextColor(255,178,74); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('Checklist de Vistoria de Veículo',margin,14);
+  doc.setTextColor(180); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`,pageW-margin,14,{align:'right'});
+  y=30; doc.setTextColor(0);
+
+  // ── Dados gerais ──
+  doc.setFillColor(240,242,244);
+  doc.roundedRect(margin,y-4,contentW,38,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(60);
+  doc.text('DADOS DA VISTORIA',margin+4,y+2); y+=8;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(30);
+  // Selfie do responsável no canto superior direito do bloco de dados
+  const selfieSize = 30;
+  const selfieX = pageW - margin - selfieSize;
+  const selfieY = y - 2;
+  if(selfieForPdf){
+    try{
+      // Círculo de fundo
+      doc.setFillColor(35,42,49);
+      doc.circle(selfieX+selfieSize/2, selfieY+selfieSize/2, selfieSize/2+1, 'F');
+      doc.addImage(selfieForPdf,'JPEG',selfieX, selfieY, selfieSize, selfieSize);
+      doc.setDrawColor(255,178,74);
+      doc.setLineWidth(0.8);
+      doc.circle(selfieX+selfieSize/2, selfieY+selfieSize/2, selfieSize/2+1, 'S');
+      doc.setLineWidth(0.2);
+    }catch(e){}
+  }
+  const colW = selfieForPdf ? contentW - selfieSize - 6 : contentW;
+  const col=colW/2;
+  const metaLines=[
+    [`Tipo: ${meta.tipo||'-'}`, `Responsável: ${meta.nome||'-'}`],
+    [`Placa: ${meta.placa||'-'}`, `Combustível: ${meta.combustivel||'-'}`],
+    [`Modelo/cor: ${meta.modelo||'-'}`, `KM: ${meta.km||'-'}`],
+  ];
+  metaLines.forEach(row=>{
+    doc.text(row[0],margin+4,y);
+    doc.text(row[1],margin+col,y);
+    y+=6;
+  });
+  if(selfieForPdf) y=Math.max(y, selfieY+selfieSize+4);
+  y+=6;
+
+  // ── Itens ──
+  for(let sIdx=0;sIdx<CHECKLIST.length;sIdx++){
+    const sec=CHECKLIST[sIdx];
+    ensureSpace(14);
+    // Título da seção
+    doc.setFillColor(30,34,40);
+    doc.rect(margin,y-4,contentW,9,'F');
+    doc.setTextColor(255,178,74); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text(`${String(sIdx+1).padStart(2,'0')}  ${sec.title.toUpperCase()}`,margin+3,y+2);
+    y+=11; doc.setTextColor(0);
+
+    for(let iIdx=0;iIdx<sec.items.length;iIdx++){
+      const key=`s${sIdx}_i${iIdx}`;
+      const s=sData[key]||{};
+      const statusTxt=statusLabelPDF(s.status);
+      const statusColor=statusColorPDF(s.status);
+
+      // Calcula altura do bloco de texto do item
+      doc.setFontSize(10);
+      const itemLines=doc.splitTextToSize(sec.items[iIdx], contentW-42);
+      const blockH=Math.max(8, itemLines.length*5) + (s.note?8:0) + 2;
+      ensureSpace(blockH+3);
+
+      // Fundo zebrado
+      if(iIdx%2===0){ doc.setFillColor(248,249,250); doc.rect(margin,y-3,contentW,blockH,'F'); }
+
+      // Badge de status
+      doc.setFillColor(...statusColor.map(c=>Math.min(255,c+160)));
+      doc.roundedRect(margin+2,y-2.5,22,6,1,1,'F');
+      doc.setTextColor(...statusColor); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+      doc.text(statusTxt,margin+13,y+1.2,{align:'center'});
+
+      // Texto do item
+      doc.setTextColor(30); doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text(itemLines,margin+27,y);
+      y+=itemLines.length*5;
+
+      // Observação
+      if(s.note){
+        ensureSpace(7);
+        doc.setFontSize(9); doc.setTextColor(100);
+        const noteLines=doc.splitTextToSize(`📝 ${s.note}`,contentW-30);
+        doc.text(noteLines,margin+27,y);
+        y+=noteLines.length*4.5;
+      }
+
+      // Fotos do item
+      const media=mStore[key]||[];
+      const images=media.filter(m=>m.type&&m.type.startsWith('image'));
+      const videos=media.filter(m=>m.type&&m.type.startsWith('video'));
+
+      if(images.length>0){
+        const imgW=42, gap=4, maxPerRow=Math.floor(contentW/(imgW+gap));
+        let ix=margin+4, rowH=0, imgsInRow=0;
+        for(const imgItem of images){
+          const imgEl=await waitImgLoad(imgItem.dataUrl);
+          if(!imgEl) continue;
+          const ratio=imgEl.naturalHeight/imgEl.naturalWidth;
+          const ih=imgW*ratio;
+          if(imgsInRow>=maxPerRow){ y+=rowH+gap; ix=margin+4; rowH=0; imgsInRow=0; }
+          ensureSpace(ih+gap+2);
+          try{
+            doc.addImage(imgItem.dataUrl,'JPEG',ix,y,imgW,ih,undefined,'FAST');
+          }catch(err){
+            try{ doc.addImage(imgItem.dataUrl,'PNG',ix,y,imgW,ih,undefined,'FAST'); }catch(e2){}
+          }
+          ix+=imgW+gap; rowH=Math.max(rowH,ih); imgsInRow++;
+        }
+        if(imgsInRow>0) y+=rowH+gap;
+      }
+      if(videos.length>0){
+        ensureSpace(6);
+        doc.setFontSize(9); doc.setTextColor(100);
+        doc.text(`[${videos.length} vídeo(s) — acesse o checklist para visualizar]`,margin+4,y);
+        y+=6; doc.setTextColor(0);
+      }
+      y+=3;
+    }
+    y+=4;
+  }
+
+  // ── Observações gerais ──
+  if(meta.obsGeral){
+    ensureSpace(18); hr();
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(60);
+    doc.text('OBSERVAÇÕES GERAIS',margin,y); y+=6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(30);
+    const obsLines=doc.splitTextToSize(meta.obsGeral,contentW);
+    ensureSpace(obsLines.length*5+4);
+    doc.text(obsLines,margin,y); y+=obsLines.length*5+4;
+  }
+
+  // ── Assinatura ──
+  ensureSpace(50); hr([200,200,200]);
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(60);
+  doc.text('ASSINATURA',margin,y); y+=6;
+  if(sig && sig.length>100){
+    try{ doc.addImage(sig,'PNG',margin,y,75,32); y+=34; }catch(e){}
+  }
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(30);
+  doc.text(meta.nome||'',margin,y); y+=5;
+  doc.setFontSize(9); doc.setTextColor(120);
+  doc.text(new Date(submittedAt).toLocaleString('pt-BR'),margin,y);
+
+  // ── Rodapé em todas as páginas ──
+  const totalPages=doc.getNumberOfPages();
+  for(let p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setFontSize(8); doc.setTextColor(160);
+    doc.text(`Página ${p} de ${totalPages}`,pageW-margin,pageH-8,{align:'right'});
+    doc.text(`Vistoria: ${meta.placa||'-'} · ${meta.tipo||'-'}`,margin,pageH-8);
+  }
+
+  const fileName=`checklist-${(meta.placa||'veiculo').replace(/[^a-zA-Z0-9]/g,'')}-${(meta.tipo||'').replace(/[^a-zA-Z0-9]/g,'')}.pdf`;
+  doc.save(fileName);
+}
+
+// -----------------------------------------------------------------------
+// generatePDF: usa os dados ao vivo do formulário (rascunho atual em tela).
+// Usado pelo botão do formulário ("Gerar PDF sem enviar") e pela tela de
+// sucesso logo após o envio ("Gerar PDF do checklist").
+// -----------------------------------------------------------------------
+async function generatePDF(){
+  const meta={
+    tipo:document.getElementById('tipo').value,
+    placa:document.getElementById('placa').value,
+    modelo:document.getElementById('modelo').value,
+    km:document.getElementById('km').value,
+    nome:document.getElementById('nome').value,
+    combustivel:document.getElementById('combustivel').value,
+    obsGeral:document.getElementById('obsGeral').value,
+  };
+  const sig=canvas.toDataURL('image/png');
+  const submittedAt=Date.now();
+  const selfieForPdf = selfieDataUrl || (()=>{try{return LS.get(SELFIE_KEY)||null;}catch(e){return null;}})();
+  // Fotos: prioridade localStorage (persistente) > memória
+  let mStore = loadMediaFromLS();
+  if(!Object.keys(mStore).length) mStore = mediaStore;
+
+  await buildPDF({meta, sData:stateData, mStore, selfieForPdf, sig, submittedAt});
+}
+document.getElementById('pdfBtn').addEventListener('click', async ()=>{
+  const pdfBtn=document.getElementById('pdfBtn');
+  const pdfStatus=document.getElementById('pdfStatus');
+  pdfBtn.disabled=true; pdfStatus.textContent='Gerando PDF...';
+  await generatePDF();
+  pdfBtn.disabled=false; pdfStatus.textContent='✅ PDF gerado com sucesso!';
+});
+document.getElementById('pdfBtnForm').addEventListener('click', async ()=>{
+  const pdfStatus = document.getElementById('statusLine');
+  const pdfBtn = document.getElementById('pdfBtnForm');
+  pdfBtn.disabled = true;
+  pdfStatus.textContent = 'Gerando PDF...';
+  await generatePDF();
+  pdfBtn.disabled = false;
+  pdfStatus.textContent = 'PDF gerado!';
+  setTimeout(()=>{ pdfStatus.textContent = 'Os dados ficam salvos automaticamente enquanto você preenche.'; }, 3000);
+});
+
+// -----------------------------------------------------------------------
+// generateReportPDF: gera o PDF de UMA vistoria específica já salva no
+// painel de relatórios (usa os dados exatos daquele registro: selfie,
+// fotos e assinatura daquele envio — não os dados da sessão atual).
+// -----------------------------------------------------------------------
+async function generateReportPDF(id){
+  const btn = document.getElementById(`pdf-btn-${id}`);
+  const data = _reportsCache.find(r=>r.id===id);
+  if(!data){ alert('Vistoria não encontrada.'); return; }
+  if(btn){ btn.disabled=true; btn.textContent='Gerando...'; }
+  try{
+    const meta = data.meta||{};
+    const sData = data.stateData||{};
+    const sig = data.signature || canvas.toDataURL('image/png');
+    const submittedAt = data.submittedAt ? new Date(data.submittedAt).getTime() : (data.savedAt ? new Date(data.savedAt).getTime() : Date.now());
+    const selfieForPdf = data.selfie || null;
+    // mediaBase64 vem como {chave: [dataUrl, ...]} — normaliza para o formato {dataUrl,type} usado no PDF
+    const mStore = {};
+    Object.entries(data.mediaBase64||{}).forEach(([key,arr])=>{
+      mStore[key] = (arr||[]).map(dataUrl=>({dataUrl, type:'image'}));
+    });
+    await buildPDF({meta, sData, mStore, selfieForPdf, sig, submittedAt});
+  }catch(e){
+    alert('Erro ao gerar PDF: '+e.message);
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='📄 Gerar PDF'; }
+  }
+}
+
+// =====================================================================
+// INIT — mostra a tela correta
+// =====================================================================
+(function init(){
+  // se não tem PIN configurado, mostra aviso no admin-btn
+  const cfg=loadConfig();
+  if(!cfg.pin){
+    document.querySelector('.admin-btn').textContent='⚙️ Configurar sistema';
+  }
+})();
+</script>
+</body>
+</html>
